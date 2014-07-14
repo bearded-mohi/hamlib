@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include "hamlib.h"
+#include "lexer.h"
 
 
 int main(int p, char **args) {
-	aparse(NULL);
+	lex("%head#some.b-head title=\"lala\"\n\t.b-menu");
 }
