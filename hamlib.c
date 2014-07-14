@@ -1,7 +1,18 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "hamlib.h"
+
+typedef enum {
+	TOKEN_EMPTY,		
+	TOKEN_SPACE,
+	TOKEN_TAB,
+	TOKEN_CDATA,
+	TOKEN_TAG,
+	TOKEN_CLASS,
+	TOKEN_ATTR
+} token;
 
 struct tag {
 	struct tag *next;
@@ -12,7 +23,8 @@ static struct tag *_list        = NULL;
 static int         _prev_indent = 0;
 static int         _indent      = 0;
 
-void list_insert(struct tag **list, char *str, int pos) {
+void
+list_insert(struct tag **list, char *str, int pos) {
 	struct tag *newbie = calloc(1, sizeof(struct tag));
 	newbie->str = str;
 	newbie->next = NULL;
@@ -32,7 +44,10 @@ void list_insert(struct tag **list, char *str, int pos) {
 	}
 }
 
-void list_reverse(struct tag **list) {
+void
+list_reverse(struct tag **list) {
+	assert(*list);
+
 	struct tag *cur, *frwd, *loop;
 
 	cur = *list;
@@ -48,17 +63,24 @@ void list_reverse(struct tag **list) {
 	*list = cur;
 }
 
-void list_print(struct tag *list) {
+void
+list_print(struct tag *list) {
+	assert(list);
+
 	do {
 		printf("%s\n", list->str);
 	} while((list = list->next));
 }
 
-void list_free(struct tag **list) {
-
+void
+list_free(struct tag **list) {
+	assert(*list);
 }
 
-void tag_put(char *str) {
+void
+tag_put(char *str) {
+	assert(str);
+
 	if((_indent > _prev_indent) && ((_indent - _prev_indent) > 1)) {
 		printf("wrong indent\n");
 	}
@@ -84,30 +106,103 @@ void tag_put(char *str) {
 	_indent = 0;
 }
 
-void tab_put() {
+void
+tab_put() {
 	_indent++;
 }
 
-void aparse(char *haml) {
-	tag_put("html");
-	tab_put();tag_put("head");	
-	tab_put();tab_put();tag_put("meta");
-	tab_put();tab_put();tag_put("title");
-	tab_put();tab_put();tag_put("script");
-	tab_put();tag_put("body");	
-	tab_put();tab_put();tag_put("h1");
-	tab_put();tab_put();tag_put("p");
-	tab_put();tab_put();tab_put();tag_put("img");
-	tab_put();tab_put();tab_put();tag_put("span");
-	tab_put();tab_put();tag_put("p");
+static void
+token_val(token tkn, char *haml, int tkn_start, int tkn_end) {
+	assert(haml);
+	assert(tkn_end >= tkn_start); 
+
+	switch (tkn) {
+		case TOKEN_TAB: {
+			tab_put();
+			break;
+		}			
+		case TOKEN_TAG: {
+			size_t size = (tkn_end - tkn_start); // skip first symbol %
+			char *val = malloc(size * sizeof(char));
+			memcpy(val, &haml[tkn_start + 1], size - 1); // skip %
+			val[size - 1] = '\0';
+			tag_put(val);
+			free(val);
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+char *
+aparse(char *haml) {
+	assert(haml);
+
+	token tkn      = TOKEN_EMPTY;
+	int  tkn_start = 0;
+
+	for(int pos = 0; ; pos++) {
+		if('\t' == haml[pos]) {
+			token_val(tkn, haml, tkn_start, pos);
+			tkn = TOKEN_TAB;
+			tkn_start = pos;			
+		} else if('%' == haml[pos]) {
+			token_val(tkn, haml, tkn_start, pos);
+			tkn = TOKEN_TAG;
+			tkn_start = pos;
+		} else if('.' == haml[pos]) {
+			if(TOKEN_TAG == tkn) {
+				token_val(tkn, haml, tkn_start, pos);
+				tkn = TOKEN_CLASS;
+				tkn_start = pos;
+			}
+		} else if((' ' == haml[pos]) || ('\n' == haml[pos])) {
+			if(TOKEN_CDATA != tkn) {
+				token_val(tkn, haml, tkn_start, pos);
+				tkn = TOKEN_SPACE;
+				tkn_start = pos;
+			}
+		} else if('\0' == haml[pos]) {
+			token_val(tkn, haml, tkn_start, pos);
+			break;
+		} else {
+			if((TOKEN_TAG != tkn) && (TOKEN_CLASS != tkn) && (TOKEN_CDATA != tkn)) {
+				tkn = TOKEN_CDATA;
+				tkn_start = pos;
+			}
+		}
+	}
 
 	list_reverse(&_list);
 	list_print(_list);
 	list_free(&_list);
+
+	return NULL;
 }
 
+char *
+aparse2(char *haml) {
+	#define SPACE ' '
+	#define TAB '\t'
+	#define PERC '%'
+	#define SHARP '#'
+	#define DOT '.'
+	#define EQL '='
+	#define DOUBLE_QT '"'
 
+	#define TKN_TAG 1
+	#define TKN_CLASS 2
+	#define TKN_ID 3
+	#define TKN_ATTR_NAME 4
+	#define TKN_ATTR_VALUE 5
+	#define TKN_CDATA 6
 
-
-
-
+	for (int pos = 0; ; pos++) {
+		switch (haml[pos]) {
+			case END: {
+				return NULL;
+			} case 
+		}
+	}
+}

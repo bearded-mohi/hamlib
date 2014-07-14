@@ -1,6 +1,6 @@
 #ifndef HAMLIB_H_INCLUDED
 #define HAMLIB_H_INCLUDED
 
-void aparse(char *haml);
+char *aparse(char *haml);
 
 #endif
