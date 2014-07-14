@@ -7,7 +7,7 @@ $(PROG): main.o hamlib.o lexer.o parser.o
 
 lexer.o: lexer.h
 
-parser.o: parser.h lexer.h
+parser.o: parser.h lexer.h hamlib.h
 
 hamlib.o: hamlib.h
 

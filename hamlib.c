@@ -180,29 +180,3 @@ aparse(char *haml) {
 
 	return NULL;
 }
-
-char *
-aparse2(char *haml) {
-	#define SPACE ' '
-	#define TAB '\t'
-	#define PERC '%'
-	#define SHARP '#'
-	#define DOT '.'
-	#define EQL '='
-	#define DOUBLE_QT '"'
-
-	#define TKN_TAG 1
-	#define TKN_CLASS 2
-	#define TKN_ID 3
-	#define TKN_ATTR_NAME 4
-	#define TKN_ATTR_VALUE 5
-	#define TKN_CDATA 6
-
-	for (int pos = 0; ; pos++) {
-		switch (haml[pos]) {
-			case END: {
-				return NULL;
-			} case 
-		}
-	}
-}

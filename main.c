@@ -1,4 +1,5 @@
-#include "hamlib.h"
+#include "lexer.h"
+#include "parser.h"
 #include "using.h"
 #include <assert.h>
 #include <stdio.h>
@@ -22,7 +23,8 @@ read_from_stream(FILE *stm) {
 		strcat(input, buf);
 	}
 	
-	aparse(input);
+	lexer_init(input);
+	parse();
 	free(input);
 }
 
