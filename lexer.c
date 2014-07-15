@@ -30,6 +30,8 @@ static char *in;
 static char *pos;
 
 void lexer_init(char *input) {
+	assert(input);
+	
 	in = input;
 	pos = input;
 }
@@ -43,14 +45,23 @@ enum ttype lexer_gettoken(char **pval) {
 	SEEK_TO_NONBLANK;
 
 	if('%' == *pos) {
+		/* skip percent symbol */
+		pos++;
+
 		TOKEN_START;			
 		SEEK_TO_EOW;
 		TOKEN(TAG);
 	} else if('.' == *pos) {
+		/* skip dot symbol */
+		pos++;
+		
 		TOKEN_START;
 		SEEK_TO_EO_CSS_NAME;
 		TOKEN(CLASS);
 	} else if('#' == *pos) {
+		/* skip sharp symbol */
+		pos++;
+
 		TOKEN_START;
 		SEEK_TO_EO_CSS_NAME;
 		TOKEN(ID);

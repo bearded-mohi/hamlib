@@ -1,69 +1,97 @@
-#include "hamlib.h"
+#include "generator.h"
+#include "HtmlElement.h"
 #include "lexer.h"
 #include "parser.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// document = node*
-// node = element | (element indent node)
-// element = tag? id? class* attrs cdata?
-// attrs = attr* | (attr eql cdata)
 
 static enum ttype cur_token;
 static char *cur_token_val;
-// static char *element_str;
 
-static bool one_or_zero(enum ttype tkn) {
+static HtmlElement   *el;
+static HtmlAttribute *attr;
+
+
+static bool maybe_one(enum ttype tkn, void (*callback)(char *)) {
 	if (cur_token == tkn) {		
-		printf("%d: %s\n", tkn, cur_token_val);
-
-		free(cur_token_val);
+		/* now callback is responsible for memory managment of cur_token_val */
+		callback(cur_token_val);
 		cur_token_val = NULL;
-		cur_token = lexer_gettoken(&cur_token_val);
 
+		cur_token = lexer_gettoken(&cur_token_val);
 		return true;
 	}
 	return false;
 }
 
-static void zero_or_more(enum ttype tkn) {
-	while (cur_token == tkn) {
-		printf("%d: %s\n", tkn, cur_token_val);
-
-		free(cur_token_val);
-		cur_token_val = NULL;
-		cur_token = lexer_gettoken(&cur_token_val);
-	}
+static void maybe_more(enum ttype tkn, void (*callback)(char *)) {
+	while(maybe_one(tkn, callback));
 }
 
-static void match(enum ttype tkn) {
-	if (!one_or_zero(tkn)) {
+static void match(enum ttype tkn, void (*callback)(char *)) {
+	if (!maybe_one(tkn, callback)) {
 		printf("Error: token %d expected\n", tkn);
 	}
 }
 
+static void tag(char *val) {
+	el->tag = val;
+}
+
+static void id(char *val) {
+	el->id = val;
+}
+
+static void class_name(char *val) {
+	HtmlElement_add_class(el, val);
+}
+
+static void attr_name(char *val) {
+	attr = HtmlAttribute_new();
+	attr->name = val;
+}
+
+static void attr_val(char *val) {
+	attr->val = val;
+	HtmlElement_add_attribute(el, attr);
+}
+
+static void eql(char *val) {
+
+}
+
+static void text(char *val) {
+	el->text = val;
+}
+
+static void indent(char *val) {
+	el->indent++;
+}
+
 void element() {
-	one_or_zero(TOKEN_TAG);
-	one_or_zero(TOKEN_ID);
-	zero_or_more(TOKEN_CLASS);
-	while (one_or_zero(TOKEN_ATTR)) {
-		match(TOKEN_EQL);
-		match(TOKEN_CDATA);
+	el = HtmlElement_new();
+
+	maybe_more(TOKEN_INDENT, indent);
+	maybe_one(TOKEN_TAG, tag);
+	maybe_one(TOKEN_ID, id);
+	maybe_more(TOKEN_CLASS, class_name);	
+	while (maybe_one(TOKEN_ATTR, attr_name)) {
+		match(TOKEN_EQL, eql);
+		match(TOKEN_CDATA, attr_val);
 	}
-	one_or_zero(TOKEN_CDATA);
+	maybe_one(TOKEN_CDATA, text);
+
+	/* responsible for el memory managment */
+	generator_add_element(el);
 }
 
 
 void parse() {
 	cur_token = lexer_gettoken(&cur_token_val);
-	while(TOKEN_EOF != cur_token && TOKEN_ERROR != cur_token) {
-		zero_or_more(TOKEN_INDENT);
+	while(TOKEN_EOF != cur_token && TOKEN_ERROR != cur_token) {		
 		element();
 	}
-
-	// while(TOKEN_EOF != lexer_gettoken(&cur_token_val)) {
-	// 	free(cur_token_val);
-	// 	cur_token_val = NULL;
-	// }
+	generator_get_result();
 }
