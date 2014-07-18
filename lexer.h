@@ -10,10 +10,16 @@ enum ttype {
 	TOKEN_ATTR,
 	TOKEN_EQL,
 	TOKEN_CDATA,
+	TOKEN_LBRACKET,
+	TOKEN_RBRACKET,
 	TOKEN_INDENT	
 };
 
+extern char *ttype2str[];
+
 void lexer_init(char *in);
+
+void lexer_getposition(int *line, int *column);
 
 enum ttype lexer_gettoken(char **pval);
 

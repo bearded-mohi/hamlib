@@ -1,11 +1,17 @@
 %html
 	%head
-		%meta charset="utf-8"
-		%title "PageTitle"
-		%link rel="stylesheet" href="style.css"
+		%meta(charset="utf-8")
+		%title 
+			"Test HAML file"
+		%link(rel="stylesheet" href="style.css")
 	%body.b-page
-		%header.b-header.b-header_state_collapsed "
-			This is header text realy long text"
-			%img.b-header__logo src="logo.png" alt="logo image"
-		#main.b-content
+		%header.b-header.b-header_state_collapsed
+			%img.b-header__logo(src="logo.png" alt="logo image")
+			"This is header text realy long text"
+		%div#main.b-content
 			%p.b-content__txt
+				"some p text with new line"
+				%a(href="#") "blah"
+				"wow this is also text"
+		%div#main.b-content
+			%p.b-content__txt "inline text"

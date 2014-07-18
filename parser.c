@@ -8,7 +8,8 @@
 
 
 static enum ttype cur_token;
-static char *cur_token_val;
+static char      *cur_token_val;
+static int        cur_token_indent;
 
 static HtmlElement   *el;
 static HtmlAttribute *attr;
@@ -16,10 +17,13 @@ static HtmlAttribute *attr;
 
 static bool maybe_one(enum ttype tkn, void (*callback)(char *)) {
 	if (cur_token == tkn) {		
-		/* now callback is responsible for memory managment of cur_token_val */
-		callback(cur_token_val);
+		if (callback) {
+			/* now callback is responsible for memory managment of cur_token_val */
+			callback(cur_token_val);
+		} else {
+			free(cur_token_val);
+		}
 		cur_token_val = NULL;
-
 		cur_token = lexer_gettoken(&cur_token_val);
 		return true;
 	}
@@ -32,7 +36,7 @@ static void maybe_more(enum ttype tkn, void (*callback)(char *)) {
 
 static void match(enum ttype tkn, void (*callback)(char *)) {
 	if (!maybe_one(tkn, callback)) {
-		printf("Error: token %d expected\n", tkn);
+		printf("Error: token %s expected\n", ttype2str[tkn]);
 	}
 }
 
@@ -58,40 +62,62 @@ static void attr_val(char *val) {
 	HtmlElement_add_attribute(el, attr);
 }
 
-static void eql(char *val) {
-
-}
-
-static void text(char *val) {
+static void cdata(char *val) {
 	el->text = val;
 }
 
-static void indent(char *val) {
-	el->indent++;
+static void cdata_only_element(char *val) {
+	tag("_text");
+	cdata(val);
 }
 
-void element() {
-	el = HtmlElement_new();
+static void indent(char *val) {
+	cur_token_indent++;	
+}
 
-	maybe_more(TOKEN_INDENT, indent);
+static void element() {
 	maybe_one(TOKEN_TAG, tag);
 	maybe_one(TOKEN_ID, id);
 	maybe_more(TOKEN_CLASS, class_name);	
-	while (maybe_one(TOKEN_ATTR, attr_name)) {
-		match(TOKEN_EQL, eql);
-		match(TOKEN_CDATA, attr_val);
-	}
-	maybe_one(TOKEN_CDATA, text);
+	if (TOKEN_LBRACKET == cur_token) {
+		match(TOKEN_LBRACKET, NULL);
+		while (maybe_one(TOKEN_ATTR, attr_name)) {
+			match(TOKEN_EQL, NULL);
+			match(TOKEN_CDATA, attr_val);
+		}
+		match(TOKEN_RBRACKET, NULL);	
+	}	
+	maybe_one(TOKEN_CDATA, cdata);
+}
 
-	/* responsible for el memory managment */
+static void text() {
+	match(TOKEN_CDATA, cdata_only_element);	
+}
+
+static void node() {
+	el = HtmlElement_new();
+	maybe_more(TOKEN_INDENT, indent);
+	if (TOKEN_TAG   == cur_token  ||
+	    TOKEN_ID    == cur_token  ||
+	    TOKEN_CLASS == cur_token
+	    ) {
+		element();
+	} else if (TOKEN_CDATA == cur_token) {
+		text();
+	}
+	el->indent = cur_token_indent;
+	cur_token_indent = 0;
 	generator_add_element(el);
 }
 
+static void document() {
+	while(TOKEN_EOF != cur_token && TOKEN_ERROR != cur_token) {		
+		node();
+	}
+}
 
 void parse() {
 	cur_token = lexer_gettoken(&cur_token_val);
-	while(TOKEN_EOF != cur_token && TOKEN_ERROR != cur_token) {		
-		element();
-	}
+	document();
 	generator_get_result();
 }

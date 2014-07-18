@@ -1,7 +1,9 @@
 #include "generator.h"
 #include "list.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 static list *_elements;
@@ -64,7 +66,9 @@ print_element(void *el) {
 
 	print_indent(html_el);
 
-	if (html_el->_is_closed) {
+	if (0 == strcmp("_text", html_el->tag)) {
+		printf("%s\n", html_el->text);
+	} else if (html_el->_is_closed) {
 		printf("</%s>\n", html_el->tag);
 	} else {
 		printf("<%s", html_el->tag);
@@ -76,17 +80,27 @@ print_element(void *el) {
 	}
 }
 
+static bool
+is_pair(HtmlElement *el) {
+	/* TODO: use enum for element_type */
+	if (0 == strcmp("_text", el->tag)) {
+		return false;
+	}
+	return true;
+}
+
 void
 generator_add_element(HtmlElement *el) {
 	/* open tag */
 	list_insert(&_elements, el, el->indent);
-
-	/* close tag */
-	HtmlElement *tclose = calloc(1, sizeof(HtmlElement));
-	tclose->tag = el->tag;
-	tclose->indent = el->indent;
-	tclose->_is_closed = true;
-	list_insert(&_elements, tclose, tclose->indent);
+	if (is_pair(el)) {
+		/* close tag */
+		HtmlElement *tclose = calloc(1, sizeof(HtmlElement));
+		tclose->tag = el->tag;
+		tclose->indent = el->indent;
+		tclose->_is_closed = true;
+		list_insert(&_elements, tclose, tclose->indent);
+	}
 }
 
 void

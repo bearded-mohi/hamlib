@@ -5,6 +5,20 @@
 #include <string.h>
 #include <stdio.h>
 
+ char *ttype2str[] = {
+	"Error",
+	"EOF",
+	"Tag",
+	"Id",
+	"Class",
+	"Attribute",
+	"=",
+	"CDATA",
+	"(",
+	")",
+	"Indent"
+};
+
 #define SEEK_TO_NONBLANK while(' ' == *pos || '\n' == *pos) pos++;
 
 #define SEEK_TO_EOW while(isalpha(*++pos));
@@ -12,7 +26,7 @@
 #define SEEK_TO_EO_CSS_NAME \
 do{	pos++; }while('-' == *pos || '_' == *pos || isalpha(*pos));
 
-#define SEEK_TO_CLOSE_BR do{ pos++; }while(*pos && '"' != *pos); pos++;
+#define SEEK_TO_CLOSE_QT do{ pos++; }while(*pos && '"' != *pos); pos++;
 
 #define TOKEN_START tkn_start = pos - in;
 
@@ -23,11 +37,13 @@ memcpy(*pval, in + tkn_start, tkn_len);\
 (*pval)[tkn_len] = '\0';\
 return TOKEN_##T;
 
+
 /* source input */
 static char *in;
 
 /* pointer to current position in source */
 static char *pos;
+
 
 void lexer_init(char *input) {
 	assert(input);
@@ -36,7 +52,8 @@ void lexer_init(char *input) {
 	pos = input;
 }
 
-enum ttype lexer_gettoken(char **pval) {
+enum ttype 
+lexer_gettoken(char **pval) {
 	assert(NULL == *pval);
 
 	int tkn_start = 0;
@@ -67,7 +84,7 @@ enum ttype lexer_gettoken(char **pval) {
 		TOKEN(ID);
 	} else if('"' == *pos) {
 		TOKEN_START;
-		SEEK_TO_CLOSE_BR;
+		SEEK_TO_CLOSE_QT;
 		TOKEN(CDATA);
 	} else if('=' == *pos) {
 		TOKEN_START;
@@ -77,6 +94,14 @@ enum ttype lexer_gettoken(char **pval) {
 		TOKEN_START;		
 		pos++;
 		TOKEN(INDENT);
+	} else if ('(' == *pos) {
+		TOKEN_START;
+		pos++;
+		TOKEN(LBRACKET);
+	} else if (')' == *pos) {
+		TOKEN_START;
+		pos++;
+		TOKEN(RBRACKET)
 	} else if(isalpha(*pos)){
 		TOKEN_START;
 		SEEK_TO_EOW;
