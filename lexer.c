@@ -21,21 +21,22 @@
 
 #define SEEK_TO_NONBLANK while(' ' == *pos || '\n' == *pos) pos++;
 
-#define SEEK_TO_EOW while(isalpha(*++pos));
+#define SEEK_TO_EOW while(isalnum(*++pos));
 
 #define SEEK_TO_EO_CSS_NAME \
-do{	pos++; }while('-' == *pos || '_' == *pos || isalpha(*pos));
+do{	pos++; }while('-' == *pos || '_' == *pos || isalnum(*pos));
 
-#define SEEK_TO_CLOSE_QT do{ pos++; }while(*pos && '"' != *pos); pos++;
+#define SEEK_BEFORE_CLOSE_QT do{ pos++; }while('"' != *pos);
 
 #define TOKEN_START tkn_start = pos - in;
 
-#define TOKEN(T) \
+#define TOKEN_VALUE \
 tkn_len = (pos - in) - tkn_start;\
 *pval = malloc(sizeof(char) * (tkn_len + 1));\
 memcpy(*pval, in + tkn_start, tkn_len);\
 (*pval)[tkn_len] = '\0';\
-return TOKEN_##T;
+
+#define TOKEN(T) return TOKEN_##T;
 
 
 /* source input */
@@ -67,6 +68,7 @@ lexer_gettoken(char **pval) {
 
 		TOKEN_START;			
 		SEEK_TO_EOW;
+		TOKEN_VALUE;
 		TOKEN(TAG);
 	} else if('.' == *pos) {
 		/* skip dot symbol */
@@ -74,6 +76,7 @@ lexer_gettoken(char **pval) {
 		
 		TOKEN_START;
 		SEEK_TO_EO_CSS_NAME;
+		TOKEN_VALUE;
 		TOKEN(CLASS);
 	} else if('#' == *pos) {
 		/* skip sharp symbol */
@@ -81,10 +84,18 @@ lexer_gettoken(char **pval) {
 
 		TOKEN_START;
 		SEEK_TO_EO_CSS_NAME;
+		TOKEN_VALUE;
 		TOKEN(ID);
 	} else if('"' == *pos) {
+		/* skip open qoute */
+		pos++;
+
 		TOKEN_START;
-		SEEK_TO_CLOSE_QT;
+		SEEK_BEFORE_CLOSE_QT;
+		TOKEN_VALUE;
+
+		/* skip close quote */
+		pos++;
 		TOKEN(CDATA);
 	} else if('=' == *pos) {
 		TOKEN_START;
@@ -105,6 +116,7 @@ lexer_gettoken(char **pval) {
 	} else if(isalpha(*pos)){
 		TOKEN_START;
 		SEEK_TO_EOW;
+		TOKEN_VALUE;
 		TOKEN(ATTR);
 	} else if('\0' == *pos){
 		TOKEN(EOF);

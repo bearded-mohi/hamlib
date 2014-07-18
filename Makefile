@@ -1,4 +1,4 @@
-PROG = hamlib.exe
+PROG = haml.exe
 CC = gcc
 CFLAGS = -std=c11 -Wall -o3 -g
 

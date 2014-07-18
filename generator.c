@@ -40,7 +40,7 @@ print_classes(HtmlElement *el) {
 static void
 print_single_attribute(void *attr) {
 	HtmlAttribute *attribute = attr;
-	printf(" %s=%s", attribute->name, attribute->val);
+	printf(" %s=\"%s\"", attribute->name, attribute->val);
 }
 
 static void
