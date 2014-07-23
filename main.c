@@ -1,13 +1,14 @@
-#include "lexer.h"
-#include "parser.h"
-#include "using.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static void
-read_from_stream(FILE *stm) {
+#include "lexer.h"
+#include "parser.h"
+#include "using.h"
+
+static void read_from_stream(FILE *stm)
+{
 	assert(stm);
 
 	#define BUF_SIZE 1024
@@ -28,8 +29,8 @@ read_from_stream(FILE *stm) {
 	free(input);
 }
 
-int
-main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 	if (1 == argc) {
 		read_from_stream(stdin);
 	} else {

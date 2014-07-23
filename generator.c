@@ -8,27 +8,27 @@
 
 static list *_elements;
 
-static void
-print_indent(HtmlElement *el) {
+static void print_indent(HtmlElement *el)
+{
 	for(int i = 0; i < el->indent; i++) {
 		printf("\t");
-	}	
+	}
 }
 
-static void
-print_id(HtmlElement *el) {
+static void print_id(HtmlElement *el)
+{
 	if (el->id) {
 		printf(" id=\"%s\"", el->id);
 	}
 }
 
-static void
-print_single_class(void *class_name) {
+static void print_single_class(void *class_name)
+{
 	printf("%s ", (char *)class_name);
 }
 
-static void
-print_classes(HtmlElement *el) {
+static void print_classes(HtmlElement *el)
+{
 	if (el->classes) {
 		list_reverse(&el->classes);
 		printf(" class=\"");
@@ -37,22 +37,22 @@ print_classes(HtmlElement *el) {
 	}
 }
 
-static void
-print_single_attribute(void *attr) {
+static void print_single_attribute(void *attr)
+{
 	HtmlAttribute *attribute = attr;
 	printf(" %s=\"%s\"", attribute->name, attribute->val);
 }
 
-static void
-print_attributes(HtmlElement *el) {
+static void print_attributes(HtmlElement *el)
+{
 	if(el->attributes) {
 		list_reverse(&el->attributes);
 		list_foreach(el->attributes, print_single_attribute);
 	}
 }
 
-static void
-print_text(HtmlElement *el) {
+static void print_text(HtmlElement *el)
+{
 	printf("\n");
 	if (el->text) {
 		print_indent(el);
@@ -60,8 +60,8 @@ print_text(HtmlElement *el) {
 	}
 }
 
-static void
-print_element(void *el) {
+static void print_element(void *el)
+{
 	HtmlElement *html_el = el;
 
 	print_indent(html_el);
@@ -73,24 +73,23 @@ print_element(void *el) {
 	} else {
 		printf("<%s", html_el->tag);
 		print_id(html_el);
-		print_classes(html_el);		
+		print_classes(html_el);
 		print_attributes(html_el);
 		printf(">");
 		print_text(html_el);
 	}
 }
 
-static bool
-is_pair(HtmlElement *el) {
+static bool is_pair(HtmlElement *el)
+{
 	/* TODO: use enum for element_type */
-	if (0 == strcmp("_text", el->tag)) {
+	if (0 == strcmp("_text", el->tag))
 		return false;
-	}
 	return true;
 }
 
-void
-generator_add_element(HtmlElement *el) {
+void generator_add_element(HtmlElement *el)
+{
 	/* open tag */
 	list_insert(&_elements, el, el->indent);
 	if (is_pair(el)) {
@@ -103,8 +102,8 @@ generator_add_element(HtmlElement *el) {
 	}
 }
 
-void
-generator_get_result() {
+void generator_get_result()
+{
 	list_reverse(&_elements);
 	list_foreach(_elements, print_element);
 	list_delete(&_elements, (void (*)(void *)) HtmlElement_delete);

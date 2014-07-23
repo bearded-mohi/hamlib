@@ -1,11 +1,12 @@
-#include "lexer.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
- char *ttype2str[] = {
+#include "lexer.h"
+
+char *ttype2str[] = {
 	"Error",
 	"EOF",
 	"Tag",
@@ -24,9 +25,9 @@
 #define SEEK_TO_EOW while(isalnum(*++pos));
 
 #define SEEK_TO_EO_CSS_NAME \
-do{	pos++; }while('-' == *pos || '_' == *pos || isalnum(*pos));
+do{ pos++; }while('-' == *pos || '_' == *pos || isalnum(*pos));
 
-#define SEEK_BEFORE_CLOSE_QT do{ pos++; }while('"' != *pos);
+#define SEEK_BEFORE_CLOSE_QT while('"' != *pos) pos++;
 
 #define TOKEN_START tkn_start = pos - in;
 
@@ -45,16 +46,136 @@ static char *in;
 /* pointer to current position in source */
 static char *pos;
 
+/* list of all html5 tags */
+#if 0
+static char *tags[] = {
+	"a",
+	"abbr",
+	"address",
+	"area",
+	"article",
+	"aside",
+	"audio",
+	"b",
+	"base",
+	"bdi",
+	"bdo",
+	"blockquote",
+	"body",
+	"br",
+	"button",
+	"canvas",
+	"caption",
+	"cite",
+	"code",
+	"col",
+	"colgroup",
+	"data",
+	"datalist",
+	"dd",
+	"del",
+	"details",
+	"dfn",
+	"dialog",
+	"div",
+	"dl",
+	"dt",
+	"em",
+	"embed",
+	"fieldset",
+	"figcaption",
+	"figure",
+	"footer",
+	"form",
+	"h1",
+	"h2",
+	"h3",
+	"h4",
+	"h5",
+	"h6",
+	"head",
+	"header",
+	"hgroup",
+	"hr",
+	"html",
+	"i",
+	"iframe",
+	"img",
+	"input",
+	"ins",
+	"kbd",
+	"keygen",
+	"label",
+	"legend",
+	"li",
+	"link",
+	"main",
+	"map",
+	"mark",
+	"menu",
+	"menuitem",
+	"meta",
+	"meter",
+	"nav",
+	"noscript",
+	"object",
+	"ol",
+	"optgroup",
+	"option",
+	"output",
+	"p",
+	"param",
+	"pre",
+	"progress",
+	"q",
+	"rb",
+	"rp",
+	"rt",
+	"rtc",
+	"ruby",
+	"s",
+	"samp",
+	"script",
+	"section",
+	"select",
+	"small",
+	"source",
+	"span",
+	"strong",
+	"style",
+	"sub",
+	"summary",
+	"sup",
+	"table",
+	"tbody",
+	"td",
+	"template",
+	"textarea",
+	"tfoot",
+	"th",
+	"thead",
+	"time",
+	"title",
+	"tr",
+	"track",
+	"u",
+	"ul",
+	"var",
+	"video",
+	"wbr"
+};
+#endif
 
-void lexer_init(char *input) {
+void lexer_init(char *input)
+{
 	assert(input);
-	
+
 	in = input;
 	pos = input;
 }
 
-enum ttype 
-lexer_gettoken(char **pval) {
+enum ttype lexer_gettoken(char **pval)
+{
 	assert(NULL == *pval);
 
 	int tkn_start = 0;
@@ -62,23 +183,23 @@ lexer_gettoken(char **pval) {
 
 	SEEK_TO_NONBLANK;
 
-	if('%' == *pos) {
+	if ('%' == *pos) {
 		/* skip percent symbol */
 		pos++;
 
-		TOKEN_START;			
+		TOKEN_START;
 		SEEK_TO_EOW;
 		TOKEN_VALUE;
 		TOKEN(TAG);
-	} else if('.' == *pos) {
+	} else if ('.' == *pos) {
 		/* skip dot symbol */
 		pos++;
-		
+
 		TOKEN_START;
 		SEEK_TO_EO_CSS_NAME;
 		TOKEN_VALUE;
 		TOKEN(CLASS);
-	} else if('#' == *pos) {
+	} else if ('#' == *pos) {
 		/* skip sharp symbol */
 		pos++;
 
@@ -86,7 +207,7 @@ lexer_gettoken(char **pval) {
 		SEEK_TO_EO_CSS_NAME;
 		TOKEN_VALUE;
 		TOKEN(ID);
-	} else if('"' == *pos) {
+	} else if ('"' == *pos) {
 		/* skip open qoute */
 		pos++;
 
@@ -97,12 +218,12 @@ lexer_gettoken(char **pval) {
 		/* skip close quote */
 		pos++;
 		TOKEN(CDATA);
-	} else if('=' == *pos) {
+	} else if ('=' == *pos) {
 		TOKEN_START;
 		pos++;
 		TOKEN(EQL);
-	} else if('\t' == *pos) {
-		TOKEN_START;		
+	} else if ('\t' == *pos) {
+		TOKEN_START;
 		pos++;
 		TOKEN(INDENT);
 	} else if ('(' == *pos) {
@@ -113,14 +234,14 @@ lexer_gettoken(char **pval) {
 		TOKEN_START;
 		pos++;
 		TOKEN(RBRACKET)
-	} else if(isalpha(*pos)){
+	} else if (isalpha(*pos)){
 		TOKEN_START;
 		SEEK_TO_EOW;
 		TOKEN_VALUE;
 		TOKEN(ATTR);
-	} else if('\0' == *pos){
+	} else if ('\0' == *pos){
 		TOKEN(EOF);
-	} 
+	}
 	TOKEN_START;
 	pos++;
 	TOKEN(ERROR);
