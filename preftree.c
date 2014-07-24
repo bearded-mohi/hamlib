@@ -21,8 +21,21 @@ enum lang_token {
 
 struct tree {
 	enum lang_token token;
-	struct tree    *children[256];
+	struct tree    *children[22];
+	int             selfp;
 };
+
+static struct tree _mem[1000];
+static int         _memtop;
+
+static struct tree *aralloc()
+{
+	_mem[_memtop].selfp = _memtop++;
+	return &_mem[_memtop];
+}
+
+
+static struct tree *troot, *tcur;
 
 void get_group(int str_pos, int inner_group_start, int outer_group_end, int *inner_group_end, char *ch)
 {
@@ -31,26 +44,22 @@ void get_group(int str_pos, int inner_group_start, int outer_group_end, int *inn
 	for (int i = inner_group_start; i <= outer_group_end; i++) {
 		if (lang[i][str_pos] != *ch) {
 			*inner_group_end = i - 1;
-			/*printf("get_group: [%d:%d] %c\n", inner_group_start, *inner_group_end, *ch);*/
 			return;
 		}
 	}
 	*inner_group_end = outer_group_end;
-	/*printf("get_group: [%d:%d] %c\n", inner_group_start, *inner_group_end, *ch);*/
 }
 
 void build_tree(struct tree *root, int group_start, int group_end, int str_pos)
 {
-	/*printf("group_start = %d, group_end = %d, str_pos = %d\n", group_start, group_end, str_pos);*/
-
 	int  gstart = group_start;
 	int  gend = group_end;
 	char gchar;
 	do {
 		get_group(str_pos, gstart, group_end, &gend, &gchar);
 		if (gchar) {
-			struct tree *child = calloc(1, sizeof(struct tree));
-			root->children[gchar] = child;
+			struct tree *child = aralloc();
+			root->children[gchar - 97] = child;
 			build_tree(child, gstart, gend, str_pos + 1);
 		} else {
 			root->token = gstart;			
@@ -59,18 +68,17 @@ void build_tree(struct tree *root, int group_start, int group_end, int str_pos)
 	} while(gend != group_end);
 }
 
-static struct tree *troot, *tcur;
 
 void init()
 {
-	troot = calloc(1, sizeof(struct tree));
+	troot = aralloc();
 	build_tree(troot, 1, 5, 0);
 }
 
 void incsearch(char ch)
-{
-	if (tcur->children[ch]) {
-		tcur = tcur->children[ch];
+{	
+	if (tcur->children[ch - 97]) {
+		tcur = tcur->children[ch - 97];
 	} else {
 		tcur->token = UNKNOWN;
 	}	
